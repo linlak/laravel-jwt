@@ -5,28 +5,20 @@ use Illuminate\Contracts\Auth\UserProvider;
 use Illuminate\Http\Request;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Linlak\Jwt\Contracts\Guard;
+use Illuminate\Auth\GuardHelpers;
+use Linlak\Jwt\Traits\GeneratesToken;
 
 class JwtGuard implements Guard
 {
+    use GuardHelpers, GeneratesToken;
+
     protected $request;
-    protected $provider;
-    protected $user;
 
     public function __construct(UserProvider $provider, Request $request)
     {
         $this->request = $request;
-        $this->provider = $provider;
+        $this->setProvider($provider);
         $this->user = NULL;
-    }
-
-    public function check()
-    {
-        return !is_null($this->user());
-    }
-
-    public function guest()
-    {
-        return !$this->check();
     }
 
     public function user()
@@ -35,17 +27,7 @@ class JwtGuard implements Guard
             return $this->user;
         }
     }
-    /**
-     * Get the ID for the currently authenticated user.
-     *
-     * @return int|string|null
-     */
-    public function id()
-    {
-        if ($user = $this->user()) {
-            return $this->user()->getAuthIdentifier();
-        }
-    }
+
 
     /**
      * Validate a user's credentials.
@@ -66,17 +48,7 @@ class JwtGuard implements Guard
             return false;
         }
     }
-    /**
-     * Set the current user.
-     *
-     * @param  \Illuminate\Contracts\Auth\Authenticatable  $user
-     * @return void
-     */
-    public function setUser(Authenticatable $user)
-    {
-        $this->user = $user;
-        return $this;
-    }
+
     /**
      * Attempt to authenticate a user using the given credentials.
      *
@@ -85,7 +57,14 @@ class JwtGuard implements Guard
      * @return bool
      */
     public function attempt(array $credentials = [], $remember = false)
-    { }
+    {
+        if ($this->validate($credentials)) {
+            //set token
+            $this->newToken();
+            return true;
+        }
+        return false;
+    }
 
     /**
      * Log a user into the application without sessions or cookies.
@@ -94,7 +73,9 @@ class JwtGuard implements Guard
      * @return bool
      */
     public function once(array $credentials = [])
-    { }
+    {
+        return $this->validate($credentials);
+    }
 
     /**
      * Log a user into the application.
@@ -104,7 +85,9 @@ class JwtGuard implements Guard
      * @return void
      */
     public function login(Authenticatable $user, $remember = false)
-    { }
+    {
+        $this->setUser($user);
+    }
 
     /**
      * Log the given user ID into the application.
@@ -114,7 +97,13 @@ class JwtGuard implements Guard
      * @return \Illuminate\Contracts\Auth\Authenticatable
      */
     public function loginUsingId($id, $remember = false)
-    { }
+    {
+        $user = $this->provider->retrieveById($id);
+        if (!is_null($user)) {
+            $this->setUser($user);
+            //setToken
+        }
+    }
 
     /**
      * Log the given user ID into the application without sessions or cookies.
@@ -123,7 +112,14 @@ class JwtGuard implements Guard
      * @return bool
      */
     public function onceUsingId($id)
-    { }
+    {
+        $user = $this->provider->retrieveById($id);
+        if (!is_null($user)) {
+            $this->setUser($user);
+            return true;
+        }
+        return false;
+    }
 
     /**
      * Determine if the user was authenticated via "remember me" cookie.
@@ -139,7 +135,9 @@ class JwtGuard implements Guard
      * @return void
      */
     public function logout()
-    { }
+    {
+        $this->user = NULL;
+    }
     /**
      * Refresh users token
      */

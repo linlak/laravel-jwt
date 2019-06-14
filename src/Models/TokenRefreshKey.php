@@ -7,7 +7,7 @@ use App\User;
 
 class TokenRefreshKey extends Model
 {
-    protected $fillable = [];
+    protected $fillable = ['user_id', 'revoke_key', 'provider'];
 
     public function user()
     {

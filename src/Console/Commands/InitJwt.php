@@ -54,10 +54,10 @@ class InitJwt extends Command
             return $this->displayKey($key);
         }
         if (Str::contains(file_get_contents($path), 'JWT_MAX_AGE') === false) {
-            $this->addkey($path, 'JWT_MAX_AGE', 60);
+            $this->addkey($path, 'JWT_MAX_AGE', 3600);
         } else {
             if ($this->isConfirmed('Would you like to reset token max age?')) {
-                $this->repkey($path, 'JWT_MAX_AGE', 60, 'max_age');
+                $this->repkey($path, 'JWT_MAX_AGE', 3600, 'max_age');
             } else {
                 $this->comment('Phew... No changes were made to your token max age.');
             }
