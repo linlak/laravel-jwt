@@ -7,10 +7,12 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Linlak\Jwt\Contracts\Guard;
 use Illuminate\Auth\GuardHelpers;
 use Linlak\Jwt\Traits\GeneratesToken;
+use Linlak\Jwt\Traits\ExtractsToken;
+
 
 class JwtGuard implements Guard
 {
-    use GuardHelpers, GeneratesToken;
+    use GuardHelpers, GeneratesToken, ExtractsToken;
 
     protected $request;
 
@@ -19,10 +21,24 @@ class JwtGuard implements Guard
         $this->request = $request;
         $this->setProvider($provider);
         $this->user = NULL;
+        $this->getToken();
     }
-
+    private function getToken()
+    {
+        if ($this->tokenString = $this->parse($this->request)) {
+            $this->parseToken($this->tokenString);
+        }
+        if (!is_null($this->refreshKey)) {
+            if ($user = $this->provider->retrieveById($this->refreshKey->user_id)) {
+                $this->setUser($user);
+            }
+        }
+    }
     public function user()
     {
+        if (is_null($this->user)) {
+            $this->getToken();
+        }
         if (!is_null($this->user)) {
             return $this->user;
         }
@@ -86,7 +102,10 @@ class JwtGuard implements Guard
      */
     public function login(Authenticatable $user, $remember = false)
     {
+
         $this->setUser($user);
+        //setToken
+        $this->newToken();
     }
 
     /**
@@ -98,10 +117,14 @@ class JwtGuard implements Guard
      */
     public function loginUsingId($id, $remember = false)
     {
+
         $user = $this->provider->retrieveById($id);
+
         if (!is_null($user)) {
             $this->setUser($user);
             //setToken
+            $this->newToken();
+            return $this->user();
         }
     }
 
@@ -113,7 +136,9 @@ class JwtGuard implements Guard
      */
     public function onceUsingId($id)
     {
+
         $user = $this->provider->retrieveById($id);
+
         if (!is_null($user)) {
             $this->setUser($user);
             return true;
@@ -136,13 +161,16 @@ class JwtGuard implements Guard
      */
     public function logout()
     {
+        //destroy token
         $this->user = NULL;
     }
     /**
      * Refresh users token
      */
     public function refreshToken()
-    { }
+    {
+        $this->getToken();
+    }
     /**
      * Mark token as invalid
      */

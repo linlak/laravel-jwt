@@ -15,26 +15,31 @@ trait GeneratesToken
      * @var Lcobucci\JWT\Token
      */
     private $token;
-
+    protected $refreshKey;
+    protected $shouldRefresh = false;
 
     protected function newToken()
     {
-        // $ref = new TokenRefreshKey();
-        // $ref->user_id = $user->getAuthIdentifier();
-        // $ref->revoke_key = Str::random(32);
-        // $ref->provider = cofig('app.name');
-        // $ref->is_rem = false;
-        $time = time();
-        $siner = new Sha256();
-        $builder = new Builder();
-        $builder->issuedAt($time)
-            ->canOnlyBeUsedAfter($time)
-            ->expiresAt($time + config('linjwt.max_age', 3600))
-            ->setIssuer(config('app.url', 'http://localhost'))
-            ->permittedFor(config('app.url', 'http://localhost'))
-            ->set('uid', time())
-            ->set('revoke_key', Str::random(32));
-        $this->token = $builder->getToken($siner, new Key(config('linjwt.secret', 'testing')));
+        $ref = new TokenRefreshKey();
+        $ref->user_id = $this->user()->getAuthIdentifier();
+        $ref->revoke_key = Str::random(32);
+        $ref->provider = config('app.name');
+        $ref->is_rem = false;
+        if ($ref->save()) {
+            $ref->refresh();
+            $this->refreshKey = $ref;
+            $time = time();
+            $siner = new Sha256();
+            $builder = new Builder();
+            $builder->issuedAt($time)
+                ->canOnlyBeUsedAfter($time)
+                ->expiresAt($time + config('linjwt.max_age', 3600))
+                ->setIssuer(config('app.url', 'http://localhost'))
+                ->permittedFor(config('app.url', 'http://localhost'))
+                ->set('uid', $ref->id)
+                ->set('revoke_key', $ref->revoke_key);
+            $this->token = $builder->getToken($siner, new Key(config('linjwt.secret', 'testing')));
+        }
     }
     public function token()
     {
@@ -46,8 +51,11 @@ trait GeneratesToken
     public function parseToken($token)
     {
         $this->token = (new Parser())->parse((string)$token);
-        \dump($this->isValid());
-        exit();
+        if ($this->isValid()) {
+            if (!$this->token->isExpired()) {
+                $this->refreshKey = TokenRefreshKey::where('id', $this->token->getClaim('uid'))->where('revoke_key', $this->token->getClaim('revoke_key'))->get()->first();
+            }
+        }
     }
     protected function isValid()
     {
