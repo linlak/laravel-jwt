@@ -61,4 +61,10 @@ trait ExtractsToken
             return $route->parameter($this->key);
         }
     }
+    public function checkExpires()
+    { }
+    public function shouldRefresh()
+    {
+        return $this->shouldRefresh;
+    }
 }
