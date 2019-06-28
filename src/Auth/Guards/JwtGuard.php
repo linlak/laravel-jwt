@@ -162,6 +162,10 @@ class JwtGuard implements Guard
     public function logout()
     {
         //destroy token
+        if ($this->check()) {
+            $this->refreshKey->delete();
+            $this->refreshKey = null;
+        }
         $this->user = NULL;
     }
     /**

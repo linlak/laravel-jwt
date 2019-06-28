@@ -23,7 +23,7 @@ class JwtServiceProvider extends ServiceProvider
         $this->loadLinMigrations();
         $this->registerCommands();
         $this->publishes([
-            __DIR__ . '../../config/linjwt.php' => config_path('linjwt.php'),
+            __DIR__ . '/../config/linjwt.php' => config_path('linjwt.php'),
         ]);
         Auth::extend('linjwt', function ($app, $name, array $config) {
             return new JwtGuard(Auth::createUserProvider($config['provider']), $app->make('request'));
@@ -32,13 +32,13 @@ class JwtServiceProvider extends ServiceProvider
     public function register()
     {
         $this->mergeConfigFrom(
-            __DIR__ . '../../config/linjwt.php',
+            __DIR__ . '/../config/linjwt.php',
             'linjwt'
         );
     }
     protected function loadLinMigrations()
     {
-        $this->loadMigrationsFrom(__DIR__ . '../../database/migrations');
+        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
     }
     protected function registerCommands()
     {
