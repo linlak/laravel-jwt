@@ -1,4 +1,5 @@
 <?php
+
 namespace Linlak\Jwt\Traits;
 
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -46,11 +47,17 @@ trait GeneratesToken
         if (is_null($this->token)) {
             return Null;
         }
-        return $this->token->__toString();
+        $data = [
+            'accessToken' => $this->token->__toString(),
+            "user_id" => encrypt($this->refreshKey->user_id),
+            "token_id" => encrypt($this->refreshKey->id),
+            "refresh_token" => encrypt($this->refreshKey->revoke_key)
+        ];
+        return $data;
     }
     public function parseToken($token)
     {
-        $this->token = (new Parser())->parse((string)$token);
+        $this->token = (new Parser())->parse((string) $token);
         if ($this->isValid()) {
             if (!$this->token->isExpired()) {
                 $this->refreshKey = TokenRefreshKey::where('id', $this->token->getClaim('uid'))->where('revoke_key', $this->token->getClaim('revoke_key'))->get()->first();
