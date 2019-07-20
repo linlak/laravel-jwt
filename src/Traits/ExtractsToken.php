@@ -1,7 +1,10 @@
 <?php
+
 namespace Linlak\Jwt\Traits;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 
 trait ExtractsToken
 {
@@ -61,8 +64,36 @@ trait ExtractsToken
             return $route->parameter($this->key);
         }
     }
+    protected function getToken()
+    {
+        if ($this->tokenString = $this->parse($this->request)) {
+            $this->checkExpires();
+            $this->parseToken($this->tokenString);
+        }
+        if (!is_null($this->refreshKey)) {
+            if ($user = $this->provider->retrieveById($this->refreshKey->user_id)) {
+                if ($this->shouldRefresh) {
+                    $this->tk();
+                }
+                $this->refreshKey->last_seen = Date::now();
+                $this->refreshKey->save();
+
+                $this->setUser($user);
+            }
+        }
+    }
     public function checkExpires()
-    { }
+    {
+        if (!is_null($this->token)) {
+            $exp = $this->token->getClaim('exp', false);
+            $now = Carbon::now();
+            $then = Carbon::now();
+            $then->setTimestamp($exp);
+            if (($now > $then) || ($then->diffInSeconds($now) < config('linjwt.refresh_at', 30))) {
+                $this->shouldRefresh = true;
+            }
+        }
+    }
     public function shouldRefresh()
     {
         return $this->shouldRefresh;

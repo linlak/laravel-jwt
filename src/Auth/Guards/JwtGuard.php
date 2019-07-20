@@ -1,4 +1,5 @@
 <?php
+
 namespace Linlak\Jwt\Auth\Guards;
 
 use Illuminate\Contracts\Auth\UserProvider;
@@ -8,7 +9,7 @@ use Linlak\Jwt\Contracts\Guard;
 use Illuminate\Auth\GuardHelpers;
 use Linlak\Jwt\Traits\GeneratesToken;
 use Linlak\Jwt\Traits\ExtractsToken;
-
+use Illuminate\Support\Facades\Date;
 
 class JwtGuard implements Guard
 {
@@ -23,17 +24,7 @@ class JwtGuard implements Guard
         $this->user = NULL;
         $this->getToken();
     }
-    private function getToken()
-    {
-        if ($this->tokenString = $this->parse($this->request)) {
-            $this->parseToken($this->tokenString);
-        }
-        if (!is_null($this->refreshKey)) {
-            if ($user = $this->provider->retrieveById($this->refreshKey->user_id)) {
-                $this->setUser($user);
-            }
-        }
-    }
+
     public function user()
     {
         if (is_null($this->user)) {

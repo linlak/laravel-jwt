@@ -4,7 +4,7 @@ namespace Linlak\Jwt\Http\Middleware;
 
 use Closure;
 
-class RefreshToken extends BaseMiddleware
+class RefreshToken
 {
     /**
      * Handle an incoming request.
@@ -15,7 +15,7 @@ class RefreshToken extends BaseMiddleware
      */
     public function handle($request, Closure $next)
     {
-        $response = $next($request);
-        return $this->setAuthenticationHeader($response);
+        $request->refreshToken();
+        return $next($request);
     }
 }

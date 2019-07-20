@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
 use Lcobucci\JWT\Signer\Key;
 use Lcobucci\JWT\Parser;
+use Illuminate\Support\Facades\Date;
 
 trait GeneratesToken
 {
@@ -26,21 +27,26 @@ trait GeneratesToken
         $ref->revoke_key = Str::random(32);
         $ref->provider = config('app.name');
         $ref->is_rem = false;
+        $ref->last_seen = Date::now();
         if ($ref->save()) {
             $ref->refresh();
             $this->refreshKey = $ref;
-            $time = time();
-            $siner = new Sha256();
-            $builder = new Builder();
-            $builder->issuedAt($time)
-                ->canOnlyBeUsedAfter($time)
-                ->expiresAt($time + config('linjwt.max_age', 3600))
-                ->setIssuer(config('app.url', 'http://localhost'))
-                ->permittedFor(config('app.url', 'http://localhost'))
-                ->set('uid', $ref->id)
-                ->set('revoke_key', $ref->revoke_key);
-            $this->token = $builder->getToken($siner, new Key(config('linjwt.secret', 'testing')));
+            $this->tk();
         }
+    }
+    protected function tk()
+    {
+        $time = time();
+        $siner = new Sha256();
+        $builder = new Builder();
+        $builder->issuedAt($time)
+            ->canOnlyBeUsedAfter($time)
+            ->expiresAt($time + config('linjwt.max_age', 3600))
+            ->setIssuer(config('app.url', 'http://localhost'))
+            ->permittedFor(config('app.url', 'http://localhost'))
+            ->set('uid', $this->refreshKey->id)
+            ->set('revoke_key', $this->refreshKey->revoke_key);
+        $this->token = $builder->getToken($siner, new Key(config('linjwt.secret', 'testing')));
     }
     public function token()
     {
@@ -59,7 +65,7 @@ trait GeneratesToken
     {
         $this->token = (new Parser())->parse((string) $token);
         if ($this->isValid()) {
-            if (!$this->token->isExpired()) {
+            if (!$this->token->isExpired() || $this->shouldRefresh) {
                 $this->refreshKey = TokenRefreshKey::where('id', $this->token->getClaim('uid'))->where('revoke_key', $this->token->getClaim('revoke_key'))->get()->first();
             }
         }

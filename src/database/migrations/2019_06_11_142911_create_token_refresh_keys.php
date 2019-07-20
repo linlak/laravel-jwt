@@ -20,6 +20,7 @@ class CreateTokenRefreshKeys extends Migration
             $table->text('revoke_key');
             $table->string('provider');
             $table->boolean('is_rem')->default(false);
+            $table->timestamp("last_seen");
             $table->timestamps();
         });
     }
