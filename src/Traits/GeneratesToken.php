@@ -17,6 +17,9 @@ trait GeneratesToken
      * @var Lcobucci\JWT\Token
      */
     private $token;
+    /**
+     * @var \Linlak\Jwt\Models\TokenRefreshKey
+     */
     protected $refreshKey;
     protected $shouldRefresh = false;
 

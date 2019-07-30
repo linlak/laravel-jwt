@@ -9,11 +9,12 @@ use Linlak\Jwt\Contracts\Guard;
 use Illuminate\Auth\GuardHelpers;
 use Linlak\Jwt\Traits\GeneratesToken;
 use Linlak\Jwt\Traits\ExtractsToken;
+use Linlak\Jwt\Traits\DeletesTokens;
 use Illuminate\Support\Facades\Date;
 
 class JwtGuard implements Guard
 {
-    use GuardHelpers, GeneratesToken, ExtractsToken;
+    use GuardHelpers, GeneratesToken, ExtractsToken, DeletesTokens;
 
     protected $request;
 
@@ -98,7 +99,21 @@ class JwtGuard implements Guard
         //setToken
         $this->newToken();
     }
-
+    public function logoutOtherDevices()
+    {
+        if ($this->check()) {
+            $this->user->loadMissing(['token_keys']);
+            if ($this->user->token_keys->count() > 0) {
+                foreach ($this->user->token_keys as $token) {
+                    if ($this->refreshKey->is($token)) {
+                        continue;
+                    }
+                    $token->delete();
+                }
+            }
+            return $this->user();
+        }
+    }
     /**
      * Log the given user ID into the application.
      *
