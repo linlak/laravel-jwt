@@ -10,7 +10,6 @@ use Illuminate\Auth\GuardHelpers;
 use Linlak\Jwt\Traits\GeneratesToken;
 use Linlak\Jwt\Traits\ExtractsToken;
 use Linlak\Jwt\Traits\DeletesTokens;
-use Illuminate\Support\Facades\Date;
 
 class JwtGuard implements Guard
 {
