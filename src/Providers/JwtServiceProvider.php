@@ -2,17 +2,19 @@
 
 namespace Linlak\Jwt\Providers;
 
+use Illuminate\Contracts\Support\DeferrableProvider;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
+use Linlak\Jwt\Auth\Guards\JwtGuard;
 use Linlak\Jwt\Console\Commands\CleanTokens;
 use Linlak\Jwt\Console\Commands\InitJwt;
-use Illuminate\Support\Facades\Auth;
-use Linlak\Jwt\Auth\Guards\JwtGuard;
 use Linlak\Jwt\Http\Middleware\Authanticate;
 use Linlak\Jwt\Http\Middleware\Check;
 use Linlak\Jwt\Http\Middleware\RefreshToken;
 
 class JwtServiceProvider extends ServiceProvider
 {
+
     protected $middlewareAliases = [
         'linjwt.auth' => Authanticate::class,
         'linjwt.check' => Check::class,
